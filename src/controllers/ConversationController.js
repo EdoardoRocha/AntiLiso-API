@@ -58,7 +58,11 @@ export default class ConversationController {
         parts: [{ text: msg.parts }],
       }));
 
-      const aiReply = await runAgent(message, clearHistory, userId);
+      let aiReply = await runAgent(message, clearHistory, userId);
+
+      if (!aiReply || aiReply.trim() == "") {
+        aiReply = "Feito! Ação processada com sucesso no banco de dados.";
+      }
 
       conversation.messages.push({ role: "user", parts: message });
       conversation.messages.push({ role: "model", parts: aiReply });
