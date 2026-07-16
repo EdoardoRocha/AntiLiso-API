@@ -72,6 +72,27 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["userId"],
         },
       },
+      {
+        name: "delete_transaction",
+        description:
+          "Use para deletar uma transação especifica ou várias no banco de dados.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            transactionId: {
+              type: "string",
+              description:
+                "ID da transação (Que vai ser recuperado usando a função de consultar transações).",
+            },
+            userId: {
+              type: "string",
+              description:
+                "ID do usuário dono da transação (injetado pelo sistema).",
+            },
+          },
+          required: ["transactionId", "userId"],
+        },
+      },
     ],
   };
 });
@@ -80,20 +101,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   if (name === "add_transaction") {
+    const session = await mongoose.startSession();
     const { userId, amount, type, category, description } = args;
 
     try {
-      const newTransaction = new Transaction({
-        userId,
-        amount,
-        type,
-        category,
-        description,
+      const result = await session.withTransaction(async () => {
+        const newTransaction = new Transaction({
+          userId,
+          amount,
+          type,
+          category,
+          description,
+        });
+
+        await newTransaction.save({ session });
+
+        return `Sucesso! R$ ${amount} (${description}) salvo na categoria '${category}'.`;
       });
-
-      await newTransaction.save();
-
-      const result = `Sucesso! R$ ${amount} (${description}) salvo na categoria '${category}'.`;
 
       return {
         content: [
@@ -109,14 +133,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [
           {
             type: "text",
-            text: `Erro de requisição: ${error.message}`,
+            text: `Erro de requisição: ${error.message}. Transação foi desfeita e não registrada no banco.`,
           },
         ],
       };
+    } finally {
+      session.endSession();
     }
   } else if (name === "consult_transactions") {
+    const userId = args.userId;
     try {
-      const transactions = await Transaction.find();
+      const transactions = await Transaction.find({ userId });
 
       return {
         content: [
@@ -135,6 +162,42 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           },
         ],
       };
+    }
+  } else if (name === "delete_transaction") {
+    const { transactionId, userId } = args;
+    const session = await mongoose.startSession();
+
+    try {
+      const result = await session.withTransaction(async () => {
+        const transactionDeleted = await Transaction.findOneAndDelete(
+          { _id: transactionId, userId: userId },
+          { session },
+        );
+        return transactionDeleted
+          ? "Transação deletada com sucesso"
+          : "Transação não encontrada.";
+      });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: result,
+          },
+        ],
+      };
+    } catch (error) {
+      console.error("[ERRO] " + error);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Erro de requisição: ${error.message}. Transação não foi deletada, tente novamente.`,
+          },
+        ],
+      };
+    } finally {
+      session.endSession();
     }
   } else {
     return {

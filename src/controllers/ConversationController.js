@@ -4,6 +4,7 @@ import Conversation from "../models/Conversation.js";
 //Dependencies
 import { styleText } from "node:util";
 import { runAgent } from "../ai/agent.js";
+import Transaction from "../models/Transaction.js";
 
 export default class ConversationController {
   static async createConversation(req, res) {
@@ -75,6 +76,11 @@ export default class ConversationController {
             error.message,
         ),
       );
+
+      await Transaction.deleteMany({
+        userId,
+        createdAt: { $gte: new Date(Date.now() - 60000) },
+      });
       return res.status(500).json({
         message: `Erro interno ao tentar processar mensagem: ${error.message}`,
       });
