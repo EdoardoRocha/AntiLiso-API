@@ -86,7 +86,7 @@ export default class ConversationController {
       await conversation.save();
 
       return res.status(200).json({
-        reply: responseParse,
+        reply: textAi,
       });
     } catch (error) {
       console.error(
