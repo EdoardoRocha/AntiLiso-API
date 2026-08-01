@@ -73,10 +73,15 @@ export default class ConversationController {
         },
       };
       const response = await axios.post(`${url}/antiliso/invoke`, payload);
-      const responseParse = JSON.stringify(response.data.output.output)
+      let textAi = response.data.output.output
+
+      if (typeof textAi === "string") {
+        textAi = textAi.replace(/^"|"$/g, '');
+        textAi = textAi.replace(/\\n/g, '\n');
+      }
 
       conversation.messages.push({ role: "user", parts: message });
-      conversation.messages.push({ role: "model", parts: responseParse });
+      conversation.messages.push({ role: "model", parts: textAi });
 
       await conversation.save();
 
