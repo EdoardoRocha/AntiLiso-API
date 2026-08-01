@@ -4,10 +4,10 @@ import cors from "cors";
 import { styleText } from "node:util";
 import { initAgent } from "./src/ai/agent.js";
 
-//Init Agent AI
-initAgent().catch((err) => {
-  console.error("Falha crítica na inicialização:" + err);
-});
+// //Init Agent AI
+// initAgent().catch((err) => {
+//   console.error("Falha crítica na inicialização:" + err);
+// });
 
 //Make APP
 const app = express();

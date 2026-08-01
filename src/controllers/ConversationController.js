@@ -3,8 +3,8 @@ import Conversation from "../models/Conversation.js";
 
 //Dependencies
 import { styleText } from "node:util";
-import { runAgent } from "../ai/agent.js";
 import Transaction from "../models/Transaction.js";
+import axios from "axios";
 
 export default class ConversationController {
   static async createConversation(req, res) {
@@ -52,25 +52,36 @@ export default class ConversationController {
       if (!conversation) {
         return res.status(404).json({ message: "Conversa não encontrada." });
       }
+      // let aiReply = await runAgent(message, clearHistory, userId);
 
-      const clearHistory = conversation.messages.map((msg) => ({
-        role: msg.role,
-        parts: [{ text: msg.parts }],
-      }));
+      // if (!aiReply || aiReply.trim() == "") {
+      //   aiReply = "Feito! Ação processada com sucesso no banco de dados.";
+      // }
 
-      let aiReply = await runAgent(message, clearHistory, userId);
-
-      if (!aiReply || aiReply.trim() == "") {
-        aiReply = "Feito! Ação processada com sucesso no banco de dados.";
-      }
+      const url = process.env.BASE_URL;
+      const payload = {
+        input: {
+          input: `${message}`,
+        },
+        config: {
+          configurable: {
+            session_id: `${conversationId}`,
+          },
+        },
+        kwargs: {
+          additionalProp1: {},
+        },
+      };
+      const response = await axios.post(`${url}/antiliso/invoke`, payload);
+      const responseParse = JSON.stringify(response.data.output.output)
 
       conversation.messages.push({ role: "user", parts: message });
-      conversation.messages.push({ role: "model", parts: aiReply });
+      conversation.messages.push({ role: "model", parts: responseParse });
 
       await conversation.save();
 
       return res.status(200).json({
-        reply: aiReply,
+        reply: responseParse,
       });
     } catch (error) {
       console.error(
