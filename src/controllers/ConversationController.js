@@ -60,20 +60,12 @@ export default class ConversationController {
 
       const url = process.env.BASE_URL;
       const payload = {
-        input: {
-          input: `${message}`,
-        },
-        config: {
-          configurable: {
-            session_id: `${conversationId}`,
-          },
-        },
-        kwargs: {
-          additionalProp1: {},
-        },
+        user_id: userId,
+        conversation_id: conversationId,
+        text: message
       };
       const response = await axios.post(`${url}/antiliso/invoke`, payload);
-      let textAi = response.data.output.output
+      let textAi = response.data.text
 
       if (typeof textAi === "string") {
         textAi = textAi.replace(/^"|"$/g, '');
