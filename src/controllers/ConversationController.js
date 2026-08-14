@@ -42,7 +42,7 @@ export default class ConversationController {
     const conversationId = req.params.conversation_id;
     const userId = req.user.id;
     const { message } = req.body;
-    const imageUrl = req.file ? req.file.filename : ""
+    const imageUrl = req.file ? `http://localhost:3000/${req.file.filename}` : null
 
     if (!message && !imageUrl) {
       return res.status(400).json({ message: "É necessário enviar uma mensagem de texto ou uma imagem." });
@@ -60,7 +60,7 @@ export default class ConversationController {
         user_id: userId,
         conversation_id: conversationId,
         text: message || "",
-        img_url: `http://localhost:3000/${imageUrl}`
+        img_url: imageUrl
       };
       const response = await axios.post(`${url}/antiliso/invoke`, payload);
       let textAi = response.data.text
@@ -83,7 +83,7 @@ export default class ConversationController {
 
       return res.status(200).json({
         reply: textAi,
-        imageUrl: `http://localhost:3000/${imageUrl}`
+        imageUrl: imageUrl
       });
     } catch (error) { 
 
