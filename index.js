@@ -13,6 +13,7 @@ import { initAgent } from "./src/ai/agent.js";
 const app = express();
 
 app.use(express.json());
+app.use(express.static("src/uploads"))
 
 //Solve cors
 app.use(cors());
