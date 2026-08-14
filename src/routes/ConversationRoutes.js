@@ -7,6 +7,9 @@ import ConversationController from "../controllers/ConversationController.js";
 //Middlewares
 import { authToken } from "../middlewares/authToken.js";
 
+// Helpers
+import { upload } from "../helpers/image-upload.js";
+
 router.post(
   "/conversation/new",
   authToken,
@@ -15,6 +18,7 @@ router.post(
 router.post(
   "/conversation/:conversation_id/message",
   authToken,
+  upload.single("image"),
   ConversationController.sendMessageInConversation,
 );
 router.get(

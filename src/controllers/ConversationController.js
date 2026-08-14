@@ -5,6 +5,7 @@ import Conversation from "../models/Conversation.js";
 import { styleText } from "node:util";
 import Transaction from "../models/Transaction.js";
 import axios from "axios";
+import fs from "fs"
 
 export default class ConversationController {
   static async createConversation(req, res) {
@@ -41,9 +42,10 @@ export default class ConversationController {
     const conversationId = req.params.conversation_id;
     const userId = req.user.id;
     const { message } = req.body;
+    const imageUrl = req.file ? req.file.filename : ""
 
-    if (!message) {
-      return res.status(400).json({ message: "A mensagem é obrigatória." });
+    if (!message && !imageUrl) {
+      return res.status(400).json({ message: "É necessário enviar uma mensagem de texto ou uma imagem." });
     }
 
     try {
@@ -52,17 +54,13 @@ export default class ConversationController {
       if (!conversation) {
         return res.status(404).json({ message: "Conversa não encontrada." });
       }
-      // let aiReply = await runAgent(message, clearHistory, userId);
-
-      // if (!aiReply || aiReply.trim() == "") {
-      //   aiReply = "Feito! Ação processada com sucesso no banco de dados.";
-      // }
 
       const url = process.env.BASE_URL;
       const payload = {
         user_id: userId,
         conversation_id: conversationId,
-        text: message
+        text: message || "",
+        img_url: `http://localhost:3000/${imageUrl}`
       };
       const response = await axios.post(`${url}/antiliso/invoke`, payload);
       let textAi = response.data.text
@@ -72,19 +70,37 @@ export default class ConversationController {
         textAi = textAi.replace(/\\n/g, '\n');
       }
 
-      conversation.messages.push({ role: "user", parts: message });
+      const userMessage = {
+        role: "user",
+        parts: message || "",
+        imageUrl
+      }
+
+      conversation.messages.push(userMessage);
       conversation.messages.push({ role: "model", parts: textAi });
 
       await conversation.save();
 
       return res.status(200).json({
         reply: textAi,
+        imageUrl: `http://localhost:3000/${imageUrl}`
       });
-    } catch (error) {
+    } catch (error) { 
+
+      if (req.file) {
+        fs.unlink(req.file.path, (err) => {
+          if(err) {
+            console.error("Falha ao deletar a imagem após erro no controller:", err);
+          } else {
+            console.log("Imagem deletada com sucesso após erro na requisição.");
+          }
+        })
+      }
+
       console.error(
         styleText(
           ["red", "bold"],
-          "Erro crítico ao tentar persistir mensagem no banco: " +
+          "Erro crítico ao tentar processar mensagem: " +
             error.message,
         ),
       );

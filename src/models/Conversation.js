@@ -10,7 +10,11 @@ const messageSchema = new mongoose.Schema(
     },
     parts: {
       type: String,
-      required: true,
+      required: false,
+    },
+    imageUrl: {
+      type: String,
+      required: false
     },
     timestamp: {
       type: Date,
