@@ -22,6 +22,35 @@ const User = mongoose.model(
         type: String,
         required: true,
       },
+      trial: [
+        {
+          isTrial: {
+            type: Boolean,
+            default: true,
+          },
+          untilValid: {
+            type: Date,
+            default: () => {
+              const now = new Date();
+              now.setDate(now.getDate() + 30);
+              return now;
+            },
+          },
+        },
+      ],
+      paymentHistory: [
+        {
+          isPay: {
+            type: Boolean,
+            required: true,
+            default: false,
+          },
+          paymentDate: {
+            type: Date,
+            default: null,
+          },
+        },
+      ],
     },
     {
       timestamps: true,
